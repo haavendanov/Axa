@@ -144,7 +144,7 @@ export class AppService {
     });
   }
 
-  async sendPlan(sendInsurancePlanDto: SendInsurancePlanDto, planId, sessionId): Promise<any> {
+  sendPlan(sendInsurancePlanDto: SendInsurancePlanDto, planId, sessionId): Promise<any> {
     const qs = require('qs');
 
     return this.httpService.request({
