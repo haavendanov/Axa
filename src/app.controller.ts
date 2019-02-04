@@ -17,6 +17,7 @@ export class AppController {
     try{
       this.appService.login().then(sessionId => {
         sendInsurancePlanDto.plans.forEach(async plan => {
+          this.appService.sendToCRM(sendInsurancePlanDto, plan);
           await this.appService.sendPlan(sendInsurancePlanDto, plan, sessionId)
           .catch(err => console.log(err));
         });

@@ -146,6 +146,7 @@ export class AppService {
 
   sendPlan(sendInsurancePlanDto: SendInsurancePlanDto, planId, sessionId): Promise<any> {
     const qs = require('qs');
+    const config = require('../config.json');
 
     return this.httpService.request({
       method: 'post',
@@ -159,7 +160,7 @@ export class AppService {
         'ContractorEmail.Name': sendInsurancePlanDto.first_name,
         'ContractorEmail.LastName': sendInsurancePlanDto.last_name,
         'ContractorEmail.Phone': sendInsurancePlanDto.phone,
-        'ContractorEmail.Email': sendInsurancePlanDto.email,
+        'ContractorEmail.Email': config.email,
         'inpNumRows': '1',
         'lstBenefs[0].Row': '1',
         'lstBenefs[0].isUser': 'True',
@@ -183,7 +184,7 @@ export class AppService {
           'ContractorEmail.Name': sendInsurancePlanDto.first_name,
           'ContractorEmail.LastName': sendInsurancePlanDto.last_name,
           'ContractorEmail.Phone': sendInsurancePlanDto.phone,
-          'ContractorEmail.Email': sendInsurancePlanDto.email,
+          'ContractorEmail.Email': config.email,
           'inpNumRows': '1',
           'lstBenefs[0].Row': '1',
           'lstBenefs[0].isUser': 'True',
@@ -201,6 +202,52 @@ export class AppService {
     .catch( (error) => {
       console.log(error)
       throw new BadGatewayException();
+    });
+  }
+
+  sendToCRM(sendInsurancePlanDto: SendInsurancePlanDto, planId): Promise<any> {
+    const qs = require('qs');
+    const config = require('../config.json');
+
+    const plan_string = {
+      '18': 'Emermédica',
+      '17': 'Salud Ideal',
+      '26': 'Plan Ambulatorio',
+      '13': 'Medicina Prepagada - Plan Alterno Plus',
+      '11': 'Medicina Prepagada - Plan Original Plus',
+      '15': 'Medicina Prepagada - Plan Fesalud Plus',
+    }
+
+    const data = 
+      '<Leads>' +
+        '<row no="1">' +
+          '<FL val="First Name">' + sendInsurancePlanDto.first_name + '</FL>' +
+          '<FL val="Last Name">' + sendInsurancePlanDto.last_name + '</FL>' +
+          '<FL val="Email">' + sendInsurancePlanDto.email + '</FL>' +
+          '<FL val="Phone">' + sendInsurancePlanDto.phone + '</FL>' +
+          '<FL val="Edad">' + sendInsurancePlanDto.age + '</FL>' +
+          '<FL val="Género">' + sendInsurancePlanDto.gender + '</FL>' +
+          '<FL val="Plan">' + plan_string[planId] + '</FL>' +
+        '</row>' +
+      '</Leads>';
+    const queryData =  qs.stringify({
+        authtoken: config.zoho_token,
+        scope: 'crmapi',
+        xmlData: data
+      })
+
+    return this.httpService.request({
+      method: 'post',
+      url: `https://crm.zoho.com/crm/private/xml/Leads/insertRecords?${queryData}`,
+      data: {},
+    })
+    .toPromise()
+    .then(() => {
+      return true;
+    })
+    .catch( (error) => {
+      console.log(error)
+      // throw new BadGatewayException();
     });
   }
 }
