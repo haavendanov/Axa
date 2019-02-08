@@ -205,7 +205,7 @@ export class AppService {
     });
   }
 
-  sendToCRM(sendInsurancePlanDto: SendInsurancePlanDto, planId): Promise<any> {
+  sendToCRM(sendInsurancePlanDto: SendInsurancePlanDto, planIds): Promise<any> {
     const qs = require('qs');
     const config = require('../config.json');
 
@@ -218,6 +218,8 @@ export class AppService {
       '15': 'Medicina Prepagada - Plan Fesalud Plus',
     }
 
+    const full_plan_strings = planIds.map(plan => plan_string[plan]);
+
     const data = 
       '<Leads>' +
         '<row no="1">' +
@@ -227,7 +229,7 @@ export class AppService {
           '<FL val="Phone">' + sendInsurancePlanDto.phone + '</FL>' +
           '<FL val="Edad">' + sendInsurancePlanDto.age + '</FL>' +
           '<FL val="Género">' + sendInsurancePlanDto.gender + '</FL>' +
-          '<FL val="Plan">' + plan_string[planId] + '</FL>' +
+          '<FL val="Plan">' + full_plan_strings.toString() + '</FL>' +
         '</row>' +
       '</Leads>';
     const queryData =  qs.stringify({

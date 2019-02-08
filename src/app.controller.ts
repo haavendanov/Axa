@@ -15,9 +15,9 @@ export class AppController {
   @UsePipes(new ValidationPipe())
   async create(@Body() sendInsurancePlanDto: SendInsurancePlanDto): Promise<any>{
     try{
+      this.appService.sendToCRM(sendInsurancePlanDto, sendInsurancePlanDto.plans);
       this.appService.login().then(sessionId => {
         sendInsurancePlanDto.plans.forEach(async plan => {
-          this.appService.sendToCRM(sendInsurancePlanDto, plan);
           await this.appService.sendPlan(sendInsurancePlanDto, plan, sessionId)
           .catch(err => console.log(err));
         });
