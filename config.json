@@ -1,4 +1,8 @@
 {
   "email": "info@estoy-seguro.com",
-  "zoho_token": "70d989bd46d9ecba1ee3f01233869026"
+  "zoho_token": "70d989bd46d9ecba1ee3f01233869026",
+  "email_config": {
+    "user": "haavendanov@unal.edu.co",
+    "app_pass": "mmuvnswntqwbfxpt"
+  }
 }

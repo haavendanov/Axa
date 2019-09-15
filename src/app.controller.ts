@@ -15,13 +15,16 @@ export class AppController {
   @UsePipes(new ValidationPipe())
   async create(@Body() sendInsurancePlanDto: SendInsurancePlanDto): Promise<any>{
     try{
-      this.appService.sendToCRM(sendInsurancePlanDto, sendInsurancePlanDto.plans);      
+      this.appService.sendToCRM(sendInsurancePlanDto, sendInsurancePlanDto.plans)
+      .catch(() => {
+        this.appService.sendZohoFailureMail(sendInsurancePlanDto);
+      });      
       this.appService.login().then(async sessionId => {
         for (const plan of sendInsurancePlanDto.plans) {
           await this.appService.sendPlan(sendInsurancePlanDto, plan, sessionId)
-          .catch(err => console.log(err));
+          .catch(err => { throw new BadGatewayException() });
         }
-      }).catch( (error) => console.log(error));
+      }).catch( () => this.appService.sendAxaFailureMail(sendInsurancePlanDto));
     } catch (e) {
       throw new BadGatewayException(e);
     }

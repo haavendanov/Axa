@@ -1,8 +1,20 @@
 import { Injectable, HttpService, BadGatewayException } from '@nestjs/common';
 import { SendInsurancePlanDto } from './dto/send-insurance-plan.dto';
+import * as nodemailer from "nodemailer";
 
 @Injectable()
 export class AppService {
+
+  private plan_string = {
+    '18': 'Emermédica',
+    '17': 'Salud Ideal',
+    '26': 'Plan Ambulatorio',
+    '13': 'Medicina Prepagada - Plan Alterno Plus',
+    '11': 'Medicina Prepagada - Plan Original Plus',
+    '15': 'Medicina Prepagada - Plan Fesalud Plus',
+  }
+
+  config = require("../config.json")
 
   constructor(
     private readonly httpService: HttpService,
@@ -146,7 +158,6 @@ export class AppService {
 
   sendPlan(sendInsurancePlanDto: SendInsurancePlanDto, planId, sessionId): Promise<any> {
     const qs = require('qs');
-    const config = require('../config.json');
 
     return this.httpService.request({
       method: 'post',
@@ -160,7 +171,7 @@ export class AppService {
         'ContractorEmail.Name': sendInsurancePlanDto.first_name,
         'ContractorEmail.LastName': sendInsurancePlanDto.last_name,
         'ContractorEmail.Phone': sendInsurancePlanDto.phone,
-        'ContractorEmail.Email': config.email,
+        'ContractorEmail.Email': this.config.email,
         'inpNumRows': '1',
         'lstBenefs[0].Row': '1',
         'lstBenefs[0].isUser': 'True',
@@ -184,7 +195,7 @@ export class AppService {
           'ContractorEmail.Name': sendInsurancePlanDto.first_name,
           'ContractorEmail.LastName': sendInsurancePlanDto.last_name,
           'ContractorEmail.Phone': sendInsurancePlanDto.phone,
-          'ContractorEmail.Email': config.email,
+          'ContractorEmail.Email': this.config.email,
           'inpNumRows': '1',
           'lstBenefs[0].Row': '1',
           'lstBenefs[0].isUser': 'True',
@@ -207,18 +218,8 @@ export class AppService {
 
   sendToCRM(sendInsurancePlanDto: SendInsurancePlanDto, planIds): Promise<any> {
     const qs = require('qs');
-    const config = require('../config.json');
 
-    const plan_string = {
-      '18': 'Emermédica',
-      '17': 'Salud Ideal',
-      '26': 'Plan Ambulatorio',
-      '13': 'Medicina Prepagada - Plan Alterno Plus',
-      '11': 'Medicina Prepagada - Plan Original Plus',
-      '15': 'Medicina Prepagada - Plan Fesalud Plus',
-    }
-
-    const full_plan_strings = planIds.map(plan => plan_string[plan]);
+    const full_plan_strings = planIds.map(plan => this.plan_string[plan]);
 
     const data = 
       '<Leads>' +
@@ -233,7 +234,7 @@ export class AppService {
         '</row>' +
       '</Leads>';
     const queryData =  qs.stringify({
-        authtoken: config.zoho_token,
+        authtoken: this.config.zoho_token,
         scope: 'crmapi',
         xmlData: data
       })
@@ -248,8 +249,63 @@ export class AppService {
       return true;
     })
     .catch( (error) => {
-      console.log(error)
-      // throw new BadGatewayException();
+      throw new BadGatewayException();
     });
+  }
+
+  async sendZohoFailureMail(sendInsurancePlanDto: SendInsurancePlanDto) {
+    const full_plan_strings = sendInsurancePlanDto.plans.map(plan => this.plan_string[plan]);
+
+    let mailOptions = {
+      from: this.config.email,
+      to: this.config.email,
+      subject: `Falló zoho para ${sendInsurancePlanDto.first_name} ${sendInsurancePlanDto.last_name}`,
+      html: "<b>El envío del lead a ZOHO falló, los datos son:</b> <br>" + 
+      "<br><b>Nombre: </b>" + sendInsurancePlanDto.first_name +
+      "<br><b>Apellido: </b>" + sendInsurancePlanDto.last_name +
+      "<br><b>Email: </b>" + sendInsurancePlanDto.email +
+      "<br><b>Género: </b>" + sendInsurancePlanDto.gender +
+      "<br><b>Edad: </b>" + sendInsurancePlanDto.age +
+      "<br><b>Teléfono: </b>" + sendInsurancePlanDto.phone +
+      "<br><b>Planes: </b>" + full_plan_strings.toString()
+    };
+
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: this.config.email_config.user,
+        pass: this.config.email_config.app_pass
+      }
+    });
+
+    await transporter.sendMail(mailOptions);
+  }
+
+  async sendAxaFailureMail(sendInsurancePlanDto: SendInsurancePlanDto) {
+    const full_plan_strings = sendInsurancePlanDto.plans.map(plan => this.plan_string[plan]);
+
+    let mailOptions = {
+      from: this.config.email,
+      to: this.config.email,
+      subject: `Falló Axa para ${sendInsurancePlanDto.first_name} ${sendInsurancePlanDto.last_name}`,
+      html: "<b>El envío del lead a Axa falló, los datos son:</b> <br>" + 
+      "<br><b>Nombre: </b>" + sendInsurancePlanDto.first_name +
+      "<br><b>Apellido: </b>" + sendInsurancePlanDto.last_name +
+      "<br><b>Email: </b>" + sendInsurancePlanDto.email +
+      "<br><b>Género: </b>" + sendInsurancePlanDto.gender +
+      "<br><b>Edad: </b>" + sendInsurancePlanDto.age +
+      "<br><b>Teléfono: </b>" + sendInsurancePlanDto.phone +
+      "<br><b>Planes: </b>" + full_plan_strings.toString()
+    };
+
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+          user: this.config.email_config.user,
+          pass: this.config.email_config.app_pass
+      }
+    });
+
+    await transporter.sendMail(mailOptions);
   }
 }
